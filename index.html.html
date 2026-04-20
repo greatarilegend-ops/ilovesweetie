@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>For My Princess</title>
+  <style>
+    :root {
+      --bg: #ffdbe7;
+      --grid: rgba(146, 68, 97, 0.12);
+      --card: #7d1025;
+      --card-2: #92162d;
+      --text: #fff7fa;
+      --muted: #f7ccd7;
+      --accent: #e8456b;
+      --accent-dark: #b3173c;
+      --shadow: 0 18px 45px rgba(104, 14, 34, 0.24);
+      --radius: 28px;
+      --maxw: 760px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      background:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+        var(--bg);
+      background-size: 30px 30px, 30px 30px, auto;
+      color: #4b1020;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.55), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(232, 69, 107, 0.12), transparent 32%);
+      pointer-events: none;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      position: relative;
+    }
+
+    .screen {
+      width: min(100%, var(--maxw));
+      display: none;
+      opacity: 0;
+      transform: translateY(18px) scale(0.985);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .screen.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .card,
+    .panel,
+    .letter,
+    .battle-card {
+      background: linear-gradient(180deg, var(--card), var(--card-2));
+      color: var(--text);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 100%;
+      padding: clamp(22px, 4vw, 38px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::after,
+    .panel::after,
+    .letter::after,
+    .battle-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -60px -70px auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      pointer-events: none;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .center {
+      text-align: center;
+      align-items: center;
+    }
+
+    .title {
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      line-height: 1.1;
+      letter-spacing: 0.03em;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 2.8vw, 1.15rem);
+      line-height: 1.6;
+      color: var(--muted);
+      max-width: 52ch;
+      margin-inline: auto;
+    }
+
+    .button-row,
+    .choice-grid {
+      display: grid;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .button-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .choice-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 10px;
+    }
+
+    button,
+    .fake-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+      box-shadow: 0 10px 24px rgba(73, 4, 21, 0.24);
+    }
+
+    button:hover,
+    button:focus-visible {
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    .btn-light {
+      background: #fff2f6;
+      color: #7d1025;
+    }
+
+    .btn-accent {
+      background: #ff9bb3;
+      color: #691023;
+    }
+
+    .btn-solid {
+      background: #fff;
+      color: var(--accent-dark);
+    }
+
+    .feedback,
+    .error,
+    .success,
+    .tiny-note {
+      min-height: 26px;
+      font-weight: 700;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .error {
+      color: #ffd3db;
+    }
+
+    .success {
+      color: #ffe990;
+    }
+
+    .heart-area {
+      display: grid;
+      gap: 22px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .heart-counter {
+      font-size: clamp(1.1rem, 3vw, 1.3rem);
+      color: var(--muted);
+    }
+
+    .heart-button {
+      width: min(200px, 46vw);
+      aspect-ratio: 1;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .heart-shape {
+      width: 72%;
+      aspect-ratio: 1;
+      background: linear-gradient(180deg, #ff5f89, #dc204d);
+      position: relative;
+      transform: rotate(-45deg);
+      border-radius: 18% 0 0 18%;
+      box-shadow: 0 14px 30px rgba(108, 7, 34, 0.28);
+    }
+
+    .heart-shape::before,
+    .heart-shape::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      border-radius: 50%;
+    }
+
+    .heart-shape::before {
+      top: -50%;
+      left: 0;
+    }
+
+    .heart-shape::after {
+      top: 0;
+      left: 50%;
+    }
+
+    .heart-button:hover .heart-shape {
+      animation: pulse 0.8s infinite;
+    }
+
+    .heart-button.blast .heart-shape {
+      animation: blast 0.7s forwards;
+    }
+
+    .particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .heart-button.blast .particles {
+      opacity: 1;
+    }
+
+    .particle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffd6df;
+      animation: pop 0.9s forwards;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .letter {
+      background: linear-gradient(180deg, #fff7fb, #ffe6ef);
+      color: #5c1022;
+      box-shadow: 0 18px 40px rgba(95, 22, 39, 0.15);
+      transform-origin: top center;
+    }
+
+    .letter h2 {
+      color: #8b1731;
+      margin-bottom: 12px;
+      font-size: clamp(1.4rem, 4vw, 2rem);
+    }
+
+    .letter p {
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .fade-up {
+      animation: fadeUp 0.9s ease forwards;
+    }
+
+    .page-column {
+      display: grid;
+      gap: 22px;
+    }
+
+    .code-wrap {
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .month-label {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .code-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    input[type="text"] {
+      width: min(180px, 100%);
+      border: 2px solid rgba(255, 255, 255, 0.32);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+      padding: 14px 16px;
+      font-size: 1.1rem;
+      text-align: center;
+      outline: none;
+    }
+
+    input[type="text"]::placeholder {
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .flash {
+      font-size: clamp(2rem, 7vw, 3.5rem);
+      font-weight: 900;
+      text-align: center;
+      color: #fff0a6;
+      opacity: 0;
+      transform: scale(0.88);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .flash.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .dark-overlay {
+      background: linear-gradient(180deg, rgba(68, 8, 24, 0.82), rgba(68, 8, 24, 0.88));
+    }
+
+    .type-box {
+      min-height: 270px;
+      white-space: pre-line;
+      line-height: 1.75;
+      font-size: 1.02rem;
+      color: #fff8fb;
+      text-align: left;
+    }
+
+    .name-big {
+      display: block;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: #ffcfda;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .battle-area {
+      display: grid;
+      gap: 20px;
+      justify-items: center;
+    }
+
+    .board {
+      width: min(320px, 90vw);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.18);
+      color: white;
+      font-size: clamp(2rem, 10vw, 3rem);
+      font-weight: 900;
+      display: grid;
+      place-items: center;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .cell:disabled {
+      cursor: default;
+      opacity: 0.92;
+    }
+
+    .game-status {
+      min-height: 34px;
+      text-align: center;
+      color: #ffe3ea;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .shake {
+      animation: shake 0.55s ease;
+    }
+
+    .spacer-top {
+      margin-top: 8px;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-10px); }
+      40% { transform: translateX(10px); }
+      60% { transform: translateX(-8px); }
+      80% { transform: translateX(8px); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: rotate(-45deg) scale(1); }
+      50% { transform: rotate(-45deg) scale(1.08); }
+    }
+
+    @keyframes blast {
+      0% { transform: rotate(-45deg) scale(1); opacity: 1; }
+      100% { transform: rotate(-45deg) scale(1.9); opacity: 0; }
+    }
+
+    @keyframes pop {
+      from { transform: translate(0, 0) scale(1); opacity: 1; }
+      to { transform: translate(var(--tx), var(--ty)) scale(0.2); opacity: 0; }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .button-row,
+      .choice-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card,
+      .panel,
+      .letter,
+      .battle-card {
+        border-radius: 24px;
+      }
+
+      .type-box {
+        min-height: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="screen active visible" id="screen-1">
+      <div class="card stack center" id="verify-card">
+        <h1 class="title">VERIFY YOUR IDENTITY</h1>
+        <p class="subtitle">Before entering, please confirm who you really are??</p>
+        <div class="button-row">
+          <button class="btn-light" id="human-btn">I AM A HUMAN 😌</button>
+          <button class="btn-accent" id="princess-btn">I AM A PRINCESS 🦄</button>
+        </div>
+        <div class="feedback" id="verify-feedback"></div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-2">
+      <div class="panel page-column center">
+        <div class="heart-area" id="heart-stage">
+          <h2 class="title">CLICK ON THE RED HEART 30 TIMES TO MOVE FURTHER</h2>
+          <div class="heart-counter" id="heart-counter">0/30</div>
+          <button class="heart-button" id="heart-btn" aria-label="Red heart button">
+            <span class="heart-shape"></span>
+            <span class="particles">
+              <span class="particle" style="top:45%;left:45%;--tx:-90px;--ty:-110px;"></span>
+              <span class="particle" style="top:50%;left:54%;--tx:110px;--ty:-100px;"></span>
+              <span class="particle" style="top:56%;left:48%;--tx:-120px;--ty:90px;"></span>
+              <span class="particle" style="top:52%;left:58%;--tx:118px;--ty:90px;"></span>
+              <span class="particle" style="top:50%;left:50%;--tx:0px;--ty:-140px;"></span>
+              <span class="particle" style="top:50%;left:50%;--tx:0px;--ty:140px;"></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="letter hidden" id="love-letter">
+          <h2>Heyaa!! I made this for you 💓</h2>
+          <p>
+            You are my cutie 😚 so this is a cute surprise for you!!<br>
+            And sorry if I did anything wrong 💔<br>
+            You can tell me what I did…<br>
+            Because only then I can promise I won’t repeat it 😔<br>
+            And I hope you will also accept your mistakes and say sorry too 🙃<br>
+            Alright… go ahead!!!
+          </p>
+          <button class="btn-accent spacer-top" id="to-page-3">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-3">
+      <div class="page-column">
+        <div class="panel stack center" id="code-section">
+          <h2 class="title">Enter the Secret Code</h2>
+          <p class="subtitle">Hint: The date when we held each other’s hand for the first time…</p>
+          <div class="code-wrap">
+            <div class="month-label">__ September</div>
+            <div class="code-row">
+              <input type="text" id="secret-input" maxlength="2" inputmode="numeric" placeholder="2 digits">
+              <button class="btn-solid" id="unlock-btn">Unlock</button>
+            </div>
+            <div class="error" id="code-feedback"></div>
+          </div>
+        </div>
+
+        <div class="panel stack center hidden fade-up" id="choice-section">
+          <h2 class="title">So… what do you choose?</h2>
+          <div class="choice-grid">
+            <button class="btn-light" id="stay-btn">💞 Stay with me</button>
+            <button class="btn-accent" id="end-btn">💔 Let’s end this 3 years of chaos</button>
+          </div>
+          <div class="flash" id="flash-text">NOOOOOOOO 😭</div>
+          <div class="feedback" id="choice-feedback"></div>
+          <button class="btn-solid hidden" id="force-stay-btn">👉 Okay fine… I choose Stay With YOU</button>
+        </div>
+
+        <div class="panel dark-overlay stack hidden" id="message-section">
+          <div class="type-box" id="type-box"></div>
+          <button class="btn-accent hidden" id="to-battle-btn">Next</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-4">
+      <div class="battle-card stack center">
+        <div id="battle-intro" class="stack center">
+          <h2 class="title">Are you ready for a battle?</h2>
+          <button class="btn-accent" id="battle-yes-btn">YES....</button>
+        </div>
+
+        <div class="battle-area hidden" id="battle-stage">
+          <h3 class="title" style="font-size: clamp(1.6rem, 4vw, 2.2rem);">Tic Tac Toe</h3>
+          <p class="subtitle">You are <strong>O</strong>. Tap any box and you will always win 💓</p>
+          <div class="board" id="board"></div>
+          <div class="game-status" id="game-status"></div>
+          <button class="btn-solid hidden" id="play-again-btn">Play Again</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const screens = Array.from(document.querySelectorAll(".screen"));
+
+    function showScreen(id) {
+      const next = document.getElementById(id);
+      screens.forEach((screen) => {
+        if (screen.id === id) {
+          screen.classList.add("active");
+          requestAnimationFrame(() => screen.classList.add("visible"));
+        } else {
+          screen.classList.remove("visible");
+          setTimeout(() => screen.classList.remove("active"), 700);
+        }
+      });
+      next.classList.add("active");
+      requestAnimationFrame(() => next.classList.add("visible"));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    const verifyCard = document.getElementById("verify-card");
+    const verifyFeedback = document.getElementById("verify-feedback");
+    const humanBtn = document.getElementById("human-btn");
+    const princessBtn = document.getElementById("princess-btn");
+
+    function moveToHeartPage(message, className) {
+      verifyFeedback.textContent = message;
+      verifyFeedback.className = "feedback " + className;
+      setTimeout(() => showScreen("screen-2"), 1500);
+    }
+
+    humanBtn.addEventListener("click", () => {
+      verifyCard.classList.remove("shake");
+      void verifyCard.offsetWidth;
+      verifyCard.classList.add("shake");
+      moveToHeartPage("ACCESS DENIED!!! NO..... YOU ARE CLEARLY A PRINCESS", "error");
+    });
+
+    princessBtn.addEventListener("click", () => {
+      moveToHeartPage("IDENTITY CONFIRMED, WELCOME MERE BOSS!! 😙", "success");
+    });
+
+    const heartBtn = document.getElementById("heart-btn");
+    const heartCounter = document.getElementById("heart-counter");
+    const heartStage = document.getElementById("heart-stage");
+    const loveLetter = document.getElementById("love-letter");
+    let heartClicks = 0;
+
+    heartBtn.addEventListener("click", () => {
+      if (heartClicks >= 30) return;
+      heartClicks += 1;
+      heartCounter.textContent = `${heartClicks}/30`;
+      if (heartClicks === 30) {
+        heartBtn.classList.add("blast");
+        setTimeout(() => {
+          heartStage.classList.add("hidden");
+          loveLetter.classList.remove("hidden");
+          loveLetter.classList.add("fade-up");
+        }, 700);
+      }
+    });
+
+    document.getElementById("to-page-3").addEventListener("click", () => {
+      showScreen("screen-3");
+    });
+
+    const unlockBtn = document.getElementById("unlock-btn");
+    const secretInput = document.getElementById("secret-input");
+    const codeFeedback = document.getElementById("code-feedback");
+    const choiceSection = document.getElementById("choice-section");
+
+    unlockBtn.addEventListener("click", () => {
+      if (secretInput.value.trim() === "19") {
+        codeFeedback.textContent = "";
+        choiceSection.classList.remove("hidden");
+        choiceSection.classList.add("fade-up");
+        choiceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        codeFeedback.textContent = "Hmm… not quite. Think again, princess.";
+      }
+    });
+
+    const flashText = document.getElementById("flash-text");
+    const choiceFeedback = document.getElementById("choice-feedback");
+    const forceStayBtn = document.getElementById("force-stay-btn");
+    const messageSection = document.getElementById("message-section");
+    const typeBox = document.getElementById("type-box");
+    const toBattleBtn = document.getElementById("to-battle-btn");
+
+    const typeMessage = `ROSHNIIII
+
+You know what…
+You are a part of my life now.
+And when you don’t talk to me…
+It feels like something important is missing. 🙃
+Maybe I act immature sometimes…
+But I’m learning.
+I never wanted to hurt you.
+If I did, tell me. I’ll fix it.
+If you want to talk…
+Just send me a simple “hii” on WhatsApp.
+I’ll be waiting. 💓
+And no matter what…
+Thank you for being there when I needed you the most....`;
+
+    let typeStarted = false;
+
+    function startTypewriter() {
+      if (typeStarted) return;
+      typeStarted = true;
+      messageSection.classList.remove("hidden");
+      messageSection.classList.add("fade-up");
+      messageSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      let i = 0;
+      const prefix = '<span class="name-big">ROSHNIIII</span>';
+      typeBox.innerHTML = prefix;
+      const remaining = typeMessage.replace(/^ROSHNIIII\s*/, "");
+
+      const timer = setInterval(() => {
+        typeBox.innerHTML = prefix + remaining.slice(0, i).replace(/\n/g, "<br>");
+        i += 1;
+        if (i > remaining.length) {
+          clearInterval(timer);
+          toBattleBtn.classList.remove("hidden");
+        }
+      }, 36);
+    }
+
+    document.getElementById("stay-btn").addEventListener("click", startTypewriter);
+
+    document.getElementById("end-btn").addEventListener("click", () => {
+      flashText.classList.add("show");
+      choiceFeedback.textContent = "Wrong choice detected. You’re way too important to lose.";
+      forceStayBtn.classList.remove("hidden");
+    });
+
+    forceStayBtn.addEventListener("click", startTypewriter);
+
+    toBattleBtn.addEventListener("click", () => {
+      showScreen("screen-4");
+    });
+
+    const battleYesBtn = document.getElementById("battle-yes-btn");
+    const battleIntro = document.getElementById("battle-intro");
+    const battleStage = document.getElementById("battle-stage");
+    const board = document.getElementById("board");
+    const gameStatus = document.getElementById("game-status");
+    const playAgainBtn = document.getElementById("play-again-btn");
+
+    let boardState = Array(9).fill("");
+    let playerWins = 0;
+    let gameOver = false;
+
+    const winningSets = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    function checkWinner(mark) {
+      return winningSets.some((set) => set.every((index) => boardState[index] === mark));
+    }
+
+    function renderBoard() {
+      board.innerHTML = "";
+      boardState.forEach((value, index) => {
+        const cell = document.createElement("button");
+        cell.className = "cell";
+        cell.textContent = value;
+        cell.disabled = !!value || gameOver;
+        cell.addEventListener("click", () => playerMove(index));
+        board.appendChild(cell);
+      });
+    }
+
+    function aiMove() {
+      if (gameOver) return;
+
+      const sillyMoves = [1, 5, 7, 3, 0, 2, 6, 8, 4];
+      const move = sillyMoves.find((index) => boardState[index] === "") ?? -1;
+      if (move !== -1) {
+        boardState[move] = "X";
+      }
+    }
+
+    function forcePrincessWinIfNeeded() {
+      if (checkWinner("O")) return true;
+
+      const promisingSet = winningSets
+        .map((set) => ({
+          set,
+          oCount: set.filter((index) => boardState[index] === "O").length,
+          emptyCells: set.filter((index) => boardState[index] === "")
+        }))
+        .filter((entry) => entry.oCount >= 2 && entry.emptyCells.length >= 1)
+        .sort((a, b) => b.oCount - a.oCount)[0];
+
+      if (promisingSet) {
+        boardState[promisingSet.emptyCells[0]] = "O";
+        return true;
+      }
+
+      const oCount = boardState.filter((cell) => cell === "O").length;
+      if (oCount >= 3) {
+        const easiestSet = winningSets
+          .map((set) => ({
+            set,
+            xCount: set.filter((index) => boardState[index] === "X").length
+          }))
+          .sort((a, b) => a.xCount - b.xCount)[0];
+
+        if (easiestSet) {
+          easiestSet.set.forEach((index) => {
+            if (boardState[index] === "") boardState[index] = "O";
+          });
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function finishGame() {
+      gameOver = true;
+      playerWins += 1;
+      gameStatus.textContent =
+        playerWins === 1
+          ? "YOUUU WONNN!! AND I LOST"
+          : "KITNA KHELOGE.... MUJHE MSG BHI KARLO AB";
+      playAgainBtn.classList.remove("hidden");
+      renderBoard();
+    }
+
+    function playerMove(index) {
+      if (boardState[index] || gameOver) return;
+      boardState[index] = "O";
+
+      if (checkWinner("O")) {
+        finishGame();
+        return;
+      }
+
+      aiMove();
+
+      if (forcePrincessWinIfNeeded()) {
+        finishGame();
+        return;
+      }
+
+      gameStatus.textContent = "Your move, princess.";
+      renderBoard();
+    }
+
+    function resetGame() {
+      boardState = Array(9).fill("");
+      gameOver = false;
+      gameStatus.textContent = "Your move, princess.";
+      playAgainBtn.classList.add("hidden");
+      renderBoard();
+    }
+
+    battleYesBtn.addEventListener("click", () => {
+      battleIntro.classList.add("hidden");
+      battleStage.classList.remove("hidden");
+      resetGame();
+    });
+
+    playAgainBtn.addEventListener("click", resetGame);
+  </script>
+</body>
+</html
