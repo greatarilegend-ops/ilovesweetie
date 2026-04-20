@@ -133,19 +133,17 @@
     }
 
     .button-row,
-    .choice-grid {
+    .choice-grid,
+    .action-row {
       display: grid;
       gap: 14px;
       width: 100%;
     }
 
-    .button-row {
+    .button-row,
+    .choice-grid,
+    .action-row {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .choice-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      margin-top: 10px;
     }
 
     button,
@@ -183,8 +181,7 @@
 
     .feedback,
     .error,
-    .success,
-    .tiny-note {
+    .success {
       min-height: 26px;
       font-weight: 700;
       line-height: 1.5;
@@ -388,33 +385,41 @@
 
     .battle-area {
       display: grid;
-      gap: 20px;
+      gap: 18px;
       justify-items: center;
     }
 
-    .board {
-      width: min(320px, 90vw);
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+    .game-note {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffe3ea;
+      text-align: center;
     }
 
-    .cell {
-      aspect-ratio: 1;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.18);
-      color: white;
-      font-size: clamp(2rem, 10vw, 3rem);
-      font-weight: 900;
+    .flappy-wrap {
+      width: min(420px, 92vw);
       display: grid;
-      place-items: center;
-      box-shadow: none;
-      padding: 0;
+      gap: 14px;
+      justify-items: center;
     }
 
-    .cell:disabled {
-      cursor: default;
-      opacity: 0.92;
+    .score-line {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #fff3f7;
+      font-weight: 800;
+      font-size: 1rem;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #ffb9ca 0%, #ffdbe8 55%, #ffeef4 100%);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+      display: block;
     }
 
     .game-status {
@@ -469,7 +474,8 @@
 
     @media (max-width: 640px) {
       .button-row,
-      .choice-grid {
+      .choice-grid,
+      .action-row {
         grid-template-columns: 1fr;
       }
 
@@ -482,6 +488,10 @@
 
       .type-box {
         min-height: 320px;
+      }
+
+      .score-line {
+        font-size: 0.95rem;
       }
     }
   </style>
@@ -574,11 +584,24 @@
         </div>
 
         <div class="battle-area hidden" id="battle-stage">
-          <h3 class="title" style="font-size: clamp(1.6rem, 4vw, 2.2rem);">Tic Tac Toe</h3>
-          <p class="subtitle">You are <strong>O</strong>. Tap any box and you will always win 💓</p>
-          <div class="board" id="board"></div>
-          <div class="game-status" id="game-status"></div>
-          <button class="btn-solid hidden" id="play-again-btn">Play Again</button>
+          <h3 class="title" style="font-size: clamp(1.6rem, 4vw, 2.2rem);">Flappy Love Bird</h3>
+          <p class="game-note">Score 10 points to win</p>
+          <div class="flappy-wrap">
+            <div class="score-line">
+              <span id="score-text">Score: 0</span>
+              <span>Tap / Click / Space to fly</span>
+            </div>
+            <canvas id="flappy-canvas" width="420" height="620" aria-label="Flappy bird game"></canvas>
+          </div>
+          <div class="game-status" id="game-status">Press Start and score 10 points to win.</div>
+          <div class="action-row">
+            <button class="btn-solid" id="start-game-btn">Start Game</button>
+            <button class="btn-solid hidden" id="play-again-btn">Play Again</button>
+          </div>
+          <div class="action-row hidden" id="win-actions">
+            <button class="btn-accent" id="text-me-btn">Text Me Again 💌</button>
+            <button class="btn-light" id="win-play-again-btn">Play Again</button>
+          </div>
         </div>
       </div>
     </section>
@@ -728,129 +751,304 @@ Thank you for being there when I needed you the most....`;
     const battleYesBtn = document.getElementById("battle-yes-btn");
     const battleIntro = document.getElementById("battle-intro");
     const battleStage = document.getElementById("battle-stage");
-    const board = document.getElementById("board");
+    const canvas = document.getElementById("flappy-canvas");
+    const ctx = canvas.getContext("2d");
     const gameStatus = document.getElementById("game-status");
+    const scoreText = document.getElementById("score-text");
+    const startGameBtn = document.getElementById("start-game-btn");
     const playAgainBtn = document.getElementById("play-again-btn");
+    const winActions = document.getElementById("win-actions");
+    const textMeBtn = document.getElementById("text-me-btn");
+    const winPlayAgainBtn = document.getElementById("win-play-again-btn");
 
-    let boardState = Array(9).fill("");
-    let playerWins = 0;
-    let gameOver = false;
+    const game = {
+      width: canvas.width,
+      height: canvas.height,
+      gravity: 0.42,
+      flap: -7.2,
+      pipeWidth: 64,
+      pipeGap: 170,
+      pipeSpeed: 2.7,
+      pipeSpawnEvery: 92,
+      frame: 0,
+      score: 0,
+      wins: 0,
+      running: false,
+      ended: false,
+      bird: {
+        x: 110,
+        y: 260,
+        velocity: 0,
+        radius: 18
+      },
+      pipes: []
+    };
 
-    const winningSets = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
-      [0, 4, 8], [2, 4, 6]
-    ];
-
-    function checkWinner(mark) {
-      return winningSets.some((set) => set.every((index) => boardState[index] === mark));
+    function updateScore() {
+      scoreText.textContent = `Score: ${game.score}`;
     }
 
-    function renderBoard() {
-      board.innerHTML = "";
-      boardState.forEach((value, index) => {
-        const cell = document.createElement("button");
-        cell.className = "cell";
-        cell.textContent = value;
-        cell.disabled = !!value || gameOver;
-        cell.addEventListener("click", () => playerMove(index));
-        board.appendChild(cell);
+    function resetFlappyGame() {
+      game.frame = 0;
+      game.score = 0;
+      game.running = false;
+      game.ended = false;
+      game.pipes = [];
+      game.bird.y = 260;
+      game.bird.velocity = 0;
+      updateScore();
+      gameStatus.textContent = "Press Start and score 10 points to win.";
+      startGameBtn.classList.remove("hidden");
+      playAgainBtn.classList.add("hidden");
+      winActions.classList.add("hidden");
+      drawGame();
+    }
+
+    function startFlappyGame() {
+      game.frame = 0;
+      game.score = 0;
+      game.running = true;
+      game.ended = false;
+      game.pipes = [];
+      game.bird.y = 260;
+      game.bird.velocity = 0;
+      updateScore();
+      gameStatus.textContent = "Go go go... score 10 points 💓";
+      startGameBtn.classList.add("hidden");
+      playAgainBtn.classList.add("hidden");
+      winActions.classList.add("hidden");
+    }
+
+    function flapBird() {
+      if (!game.running) return;
+      game.bird.velocity = game.flap;
+    }
+
+    function createPipe() {
+      const minTop = 80;
+      const maxTop = game.height - game.pipeGap - 120;
+      const topHeight = Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop;
+
+      game.pipes.push({
+        x: game.width + 20,
+        topHeight,
+        bottomY: topHeight + game.pipeGap,
+        passed: false
       });
     }
 
-    function aiMove() {
-      if (gameOver) return;
+    function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
+      const closestX = Math.max(rx, Math.min(cx, rx + rw));
+      const closestY = Math.max(ry, Math.min(cy, ry + rh));
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return dx * dx + dy * dy < radius * radius;
+    }
 
-      const sillyMoves = [1, 5, 7, 3, 0, 2, 6, 8, 4];
-      const move = sillyMoves.find((index) => boardState[index] === "") ?? -1;
-      if (move !== -1) {
-        boardState[move] = "X";
+    function endRound(won) {
+      game.running = false;
+      game.ended = true;
+
+      if (won) {
+        game.wins += 1;
+        if (game.wins >= 2) {
+          gameStatus.textContent = "kitna kheloge...text me now";
+        } else {
+          gameStatus.textContent = "You wonnnn 💖";
+        }
+        winActions.classList.remove("hidden");
+        playAgainBtn.classList.add("hidden");
+      } else {
+        gameStatus.textContent = "Areee you crashed... try again 💔";
+        playAgainBtn.classList.remove("hidden");
+        winActions.classList.add("hidden");
       }
     }
 
-    function forcePrincessWinIfNeeded() {
-      if (checkWinner("O")) return true;
+    function updateGame() {
+      if (!game.running) return;
 
-      const promisingSet = winningSets
-        .map((set) => ({
-          set,
-          oCount: set.filter((index) => boardState[index] === "O").length,
-          emptyCells: set.filter((index) => boardState[index] === "")
-        }))
-        .filter((entry) => entry.oCount >= 2 && entry.emptyCells.length >= 1)
-        .sort((a, b) => b.oCount - a.oCount)[0];
+      game.frame += 1;
+      game.bird.velocity += game.gravity;
+      game.bird.y += game.bird.velocity;
 
-      if (promisingSet) {
-        boardState[promisingSet.emptyCells[0]] = "O";
-        return true;
+      if (game.frame % game.pipeSpawnEvery === 0) {
+        createPipe();
       }
 
-      const oCount = boardState.filter((cell) => cell === "O").length;
-      if (oCount >= 3) {
-        const easiestSet = winningSets
-          .map((set) => ({
-            set,
-            xCount: set.filter((index) => boardState[index] === "X").length
-          }))
-          .sort((a, b) => a.xCount - b.xCount)[0];
+      for (const pipe of game.pipes) {
+        pipe.x -= game.pipeSpeed;
 
-        if (easiestSet) {
-          easiestSet.set.forEach((index) => {
-            if (boardState[index] === "") boardState[index] = "O";
-          });
-          return true;
+        if (!pipe.passed && pipe.x + game.pipeWidth < game.bird.x) {
+          pipe.passed = true;
+          game.score += 1;
+          updateScore();
+
+          if (game.score >= 10) {
+            endRound(true);
+            return;
+          }
+        }
+
+        const hitTop = circleRectCollision(
+          game.bird.x,
+          game.bird.y,
+          game.bird.radius,
+          pipe.x,
+          0,
+          game.pipeWidth,
+          pipe.topHeight
+        );
+
+        const hitBottom = circleRectCollision(
+          game.bird.x,
+          game.bird.y,
+          game.bird.radius,
+          pipe.x,
+          pipe.bottomY,
+          game.pipeWidth,
+          game.height - pipe.bottomY
+        );
+
+        if (hitTop || hitBottom) {
+          endRound(false);
+          return;
         }
       }
 
-      return false;
-    }
+      game.pipes = game.pipes.filter((pipe) => pipe.x + game.pipeWidth > -10);
 
-    function finishGame() {
-      gameOver = true;
-      playerWins += 1;
-      gameStatus.textContent =
-        playerWins === 1
-          ? "YOUUU WONNN!! AND I LOST"
-          : "KITNA KHELOGE.... MUJHE MSG BHI KARLO AB";
-      playAgainBtn.classList.remove("hidden");
-      renderBoard();
-    }
-
-    function playerMove(index) {
-      if (boardState[index] || gameOver) return;
-      boardState[index] = "O";
-
-      if (checkWinner("O")) {
-        finishGame();
-        return;
+      if (game.bird.y - game.bird.radius <= 0 || game.bird.y + game.bird.radius >= game.height) {
+        endRound(false);
       }
-
-      aiMove();
-
-      if (forcePrincessWinIfNeeded()) {
-        finishGame();
-        return;
-      }
-
-      gameStatus.textContent = "Your move, princess.";
-      renderBoard();
     }
 
-    function resetGame() {
-      boardState = Array(9).fill("");
-      gameOver = false;
-      gameStatus.textContent = "Your move, princess.";
-      playAgainBtn.classList.add("hidden");
-      renderBoard();
+    function drawBackground() {
+      ctx.clearRect(0, 0, game.width, game.height);
+
+      const sky = ctx.createLinearGradient(0, 0, 0, game.height);
+      sky.addColorStop(0, "#ffb7ca");
+      sky.addColorStop(0.55, "#ffd7e5");
+      sky.addColorStop(1, "#fff0f5");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, game.width, game.height);
+
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.beginPath();
+      ctx.arc(72, 90, 26, 0, Math.PI * 2);
+      ctx.arc(98, 82, 24, 0, Math.PI * 2);
+      ctx.arc(122, 94, 22, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(300, 110, 24, 0, Math.PI * 2);
+      ctx.arc(325, 100, 22, 0, Math.PI * 2);
+      ctx.arc(346, 112, 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#f6b4c6";
+      ctx.fillRect(0, game.height - 52, game.width, 52);
+    }
+
+    function drawPipes() {
+      for (const pipe of game.pipes) {
+        ctx.fillStyle = "#d72657";
+        ctx.fillRect(pipe.x, 0, game.pipeWidth, pipe.topHeight);
+        ctx.fillRect(pipe.x, pipe.bottomY, game.pipeWidth, game.height - pipe.bottomY);
+
+        ctx.fillStyle = "#ff87a7";
+        ctx.fillRect(pipe.x - 4, pipe.topHeight - 12, game.pipeWidth + 8, 12);
+        ctx.fillRect(pipe.x - 4, pipe.bottomY, game.pipeWidth + 8, 12);
+      }
+    }
+
+    function drawBird() {
+      ctx.save();
+      ctx.translate(game.bird.x, game.bird.y);
+      ctx.rotate(Math.max(-0.4, Math.min(0.7, game.bird.velocity * 0.05)));
+
+      ctx.fillStyle = "#ff4f7d";
+      ctx.beginPath();
+      ctx.arc(0, 0, game.bird.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffd5df";
+      ctx.beginPath();
+      ctx.ellipse(-4, 3, 8, 6, -0.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(6, -5, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#3b1020";
+      ctx.beginPath();
+      ctx.arc(7, -5, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffb347";
+      ctx.beginPath();
+      ctx.moveTo(15, 1);
+      ctx.lineTo(28, 5);
+      ctx.lineTo(15, 9);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawOverlayText() {
+      if (!game.running && !game.ended) {
+        ctx.fillStyle = "rgba(125, 16, 37, 0.18)";
+        ctx.fillRect(32, 240, game.width - 64, 86);
+        ctx.fillStyle = "#7d1025";
+        ctx.font = "700 20px Trebuchet MS";
+        ctx.textAlign = "center";
+        ctx.fillText("Press Start, then tap to fly", game.width / 2, 275);
+        ctx.font = "700 18px Trebuchet MS";
+        ctx.fillText("Reach 10 points to win", game.width / 2, 305);
+      }
+    }
+
+    function drawGame() {
+      drawBackground();
+      drawPipes();
+      drawBird();
+      drawOverlayText();
+    }
+
+    function gameLoop() {
+      updateGame();
+      drawGame();
+      requestAnimationFrame(gameLoop);
     }
 
     battleYesBtn.addEventListener("click", () => {
       battleIntro.classList.add("hidden");
       battleStage.classList.remove("hidden");
-      resetGame();
+      resetFlappyGame();
     });
 
-    playAgainBtn.addEventListener("click", resetGame);
+    startGameBtn.addEventListener("click", startFlappyGame);
+    playAgainBtn.addEventListener("click", startFlappyGame);
+    winPlayAgainBtn.addEventListener("click", startFlappyGame);
+
+    textMeBtn.addEventListener("click", () => {
+      gameStatus.textContent = game.wins >= 2 ? "kitna kheloge...text me now" : "Ab text bhi kar do na 💌";
+    });
+
+    canvas.addEventListener("click", flapBird);
+
+    window.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        event.preventDefault();
+        flapBird();
+      }
+    });
+
+    drawGame();
+    gameLoop();
   </script>
 </body>
-</html
+</html>
