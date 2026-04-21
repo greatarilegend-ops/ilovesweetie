@@ -403,13 +403,14 @@
       position: relative;
     }
 
-    #flappy-canvas {
+    #catch-canvas {
       width: min(420px, 100%);
       height: auto;
       border-radius: 22px;
       background: linear-gradient(180deg, #ffbfd0 0%, #ffcddd 40%, #ffdce7 100%);
       box-shadow: inset 0 -8px 0 rgba(125, 16, 37, 0.12);
       display: block;
+      touch-action: none;
     }
 
     .score-pill {
@@ -432,7 +433,7 @@
       position: absolute;
       inset: 0;
       border-radius: 22px;
-      background: radial-gradient(circle at center, rgba(255, 236, 161, 0.94), rgba(255, 163, 191, 0.96));
+      background: radial-gradient(circle at center, rgba(255, 236, 161, 0.96), rgba(255, 163, 191, 0.97));
       display: none;
       place-items: center;
       padding: 20px;
@@ -469,7 +470,7 @@
       gap: 14px;
       justify-items: center;
       color: #7d1025;
-      max-width: 320px;
+      max-width: 340px;
     }
 
     .win-title {
@@ -483,31 +484,31 @@
       font-weight: 800;
     }
 
-    .rating-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
+    .option-stack {
+      display: grid;
+      gap: 12px;
       width: 100%;
     }
 
-    .rating-row input {
-      color: #7d1025;
-      background: rgba(255, 255, 255, 0.75);
-      border-color: rgba(125, 16, 37, 0.18);
+    .option-stack button {
+      width: 100%;
     }
 
-    .rating-result {
-      min-height: 26px;
+    .final-type {
+      min-height: 130px;
+      font-size: clamp(1.7rem, 5.6vw, 3rem);
       font-weight: 900;
+      line-height: 1.35;
       color: #8b1731;
+      white-space: pre-line;
     }
 
-    .sorry-text {
-      font-size: 1rem;
-      font-weight: 800;
+    .not-permitted {
+      min-height: 70px;
+      font-size: 1.1rem;
       line-height: 1.6;
-      color: #691023;
+      font-weight: 800;
+      color: #8b1731;
     }
 
     .spacer-top {
@@ -577,11 +578,6 @@
 
       .type-box {
         min-height: 320px;
-      }
-
-      .rating-row {
-        flex-direction: column;
-        align-items: center;
       }
     }
   </style>
@@ -669,30 +665,32 @@
     <section class="screen" id="screen-4">
       <div class="battle-card stack center">
         <div id="battle-intro" class="stack center">
-          <h2 class="title">Are you ready for a battle?</h2>
+          <h2 class="title">Are you ready for one last game?</h2>
           <button class="btn-accent" id="battle-yes-btn">YES....</button>
         </div>
 
         <div class="battle-area hidden" id="battle-stage">
-          <h3 class="title" style="font-size: clamp(1.6rem, 4vw, 2.2rem);">Flappy Bird</h3>
-          <p class="subtitle">Score 5 points to win, princess 💓 Tap, click, or press space to fly.</p>
+          <h3 class="title" style="font-size: clamp(1.6rem, 4vw, 2.2rem);">Catch Every Letter</h3>
+          <p class="subtitle">Move the basket and catch every falling letter one by one, princess 💓</p>
 
           <div class="game-shell">
-            <div class="score-pill" id="score-pill">Score: 0 / 5</div>
-            <canvas id="flappy-canvas" width="400" height="560"></canvas>
-            <div class="game-note" id="game-note">Tap Start and then keep the bird flying.</div>
+            <div class="score-pill" id="score-pill">Collected: 0 / 6</div>
+            <canvas id="catch-canvas" width="400" height="560"></canvas>
+            <div class="game-note" id="game-note">Catch: A, R, I, 💓, R, O</div>
 
             <div class="win-overlay" id="win-overlay">
               <div class="blast-wrap" id="blast-wrap"></div>
-              <div class="win-card">
-                <div class="win-title">hurrayyy!!!! you wonn my princess😙</div>
-                <div class="win-subtitle">rate me out of 10</div>
-                <div class="rating-row">
-                  <input type="number" id="rating-input" min="0" max="10" placeholder="0 to 10">
-                  <button class="btn-accent" id="submit-rating-btn">Submit</button>
+
+              <div class="win-card" id="win-card-main">
+                <div class="win-title">You are right 😚<br>ARI LOVES RO A LOTT!!...</div>
+                <div class="win-subtitle">Choose one option...</div>
+                <div class="option-stack" id="initial-options">
+                  <button class="btn-accent" id="sorry-yes-btn">1. Sorry bologe mujhe</button>
+                  <button class="btn-light" id="sorry-no-btn">2. Sorry nai bologe mujhe</button>
                 </div>
-                <div class="rating-result" id="rating-result"></div>
-                <div class="sorry-text">okayy so now.... say sorry to me.... i am waiting 😾</div>
+                <div class="not-permitted hidden" id="not-permitted-text"></div>
+                <button class="btn-accent hidden" id="choose-one-btn">Choose 1</button>
+                <div class="final-type hidden" id="final-type-text"></div>
               </div>
             </div>
           </div>
@@ -848,7 +846,7 @@ Thank you for being there when I needed you the most....`;
     const battleYesBtn = document.getElementById("battle-yes-btn");
     const battleIntro = document.getElementById("battle-intro");
     const battleStage = document.getElementById("battle-stage");
-    const canvas = document.getElementById("flappy-canvas");
+    const canvas = document.getElementById("catch-canvas");
     const ctx = canvas.getContext("2d");
     const scorePill = document.getElementById("score-pill");
     const gameNote = document.getElementById("game-note");
@@ -856,62 +854,60 @@ Thank you for being there when I needed you the most....`;
     const restartGameBtn = document.getElementById("restart-game-btn");
     const winOverlay = document.getElementById("win-overlay");
     const blastWrap = document.getElementById("blast-wrap");
-    const ratingInput = document.getElementById("rating-input");
-    const submitRatingBtn = document.getElementById("submit-rating-btn");
-    const ratingResult = document.getElementById("rating-result");
+    const sorryYesBtn = document.getElementById("sorry-yes-btn");
+    const sorryNoBtn = document.getElementById("sorry-no-btn");
+    const chooseOneBtn = document.getElementById("choose-one-btn");
+    const notPermittedText = document.getElementById("not-permitted-text");
+    const finalTypeText = document.getElementById("final-type-text");
+    const initialOptions = document.getElementById("initial-options");
 
-    const WIN_SCORE = 5;
+    const LETTER_SEQUENCE = ["A", "R", "I", "💓", "R", "O"];
 
-    let bird;
-    let pipes;
-    let score;
+    let basket;
+    let fallingLetter;
+    let currentIndex;
     let animationId;
     let gameRunning = false;
     let gameEnded = false;
-    let pipeSpawnTimer = 0;
 
-    function resetFlappyGame() {
-      bird = {
-        x: 90,
-        y: 220,
-        radius: 18,
-        velocity: 0,
-        gravity: 0.42,
-        jump: -7.2
+    function resetLetterGame() {
+      basket = {
+        x: canvas.width / 2 - 45,
+        y: canvas.height - 52,
+        width: 90,
+        height: 22,
+        speed: 22
       };
 
-      pipes = [];
-      score = 0;
-      pipeSpawnTimer = 0;
+      fallingLetter = null;
+      currentIndex = 0;
       gameRunning = false;
       gameEnded = false;
-      ratingInput.value = "";
-      ratingResult.textContent = "";
       winOverlay.classList.remove("show");
       restartGameBtn.classList.add("hidden");
-      scorePill.textContent = `Score: ${score} / ${WIN_SCORE}`;
-      gameNote.textContent = "Tap Start and then keep the bird flying.";
+      initialOptions.classList.remove("hidden");
+      sorryYesBtn.classList.remove("hidden");
+      sorryNoBtn.classList.remove("hidden");
+      chooseOneBtn.classList.add("hidden");
+      notPermittedText.classList.add("hidden");
+      notPermittedText.textContent = "";
+      finalTypeText.classList.add("hidden");
+      finalTypeText.textContent = "";
+      scorePill.textContent = `Collected: 0 / ${LETTER_SEQUENCE.length}`;
+      gameNote.textContent = "Catch: A, R, I, 💓, R, O";
       drawScene();
     }
 
-    function createPipe() {
-      const gap = 150;
-      const minTop = 80;
-      const maxTop = 300;
-      const topHeight = Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop;
-
-      pipes.push({
-        x: canvas.width + 40,
-        width: 64,
-        topHeight,
-        gap,
-        scored: false
-      });
-    }
-
-    function jumpBird() {
-      if (!gameRunning || gameEnded) return;
-      bird.velocity = bird.jump;
+    function createFallingLetter() {
+      const value = LETTER_SEQUENCE[currentIndex];
+      const size = value === "💓" ? 34 : 38;
+      fallingLetter = {
+        value,
+        x: 40 + Math.random() * (canvas.width - 80),
+        y: -20,
+        size,
+        speed: 2.3 + currentIndex * 0.22
+      };
     }
 
     function drawBackground() {
@@ -935,70 +931,58 @@ Thank you for being there when I needed you the most....`;
       ctx.arc(340, 120, 24, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#d96a8a";
-      ctx.fillRect(0, canvas.height - 55, canvas.width, 55);
-      ctx.fillStyle = "#f58dad";
-      ctx.fillRect(0, canvas.height - 65, canvas.width, 14);
+      ctx.fillStyle = "#f6a4ba";
+      ctx.fillRect(0, canvas.height - 45, canvas.width, 45);
     }
 
-    function drawBird() {
+    function drawBasket() {
       ctx.save();
-      ctx.translate(bird.x, bird.y);
 
-      ctx.fillStyle = "#ff5f89";
+      ctx.fillStyle = "#8b5e34";
       ctx.beginPath();
-      ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
+      ctx.roundRect(basket.x, basket.y, basket.width, basket.height, 10);
       ctx.fill();
 
-      ctx.fillStyle = "#fff";
+      ctx.strokeStyle = "#a87240";
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(6, -5, 6, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(basket.x + basket.width / 2, basket.y + 4, basket.width / 2.6, Math.PI, 0);
+      ctx.stroke();
 
-      ctx.fillStyle = "#4b1020";
-      ctx.beginPath();
-      ctx.arc(8, -5, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#ffcf5c";
-      ctx.beginPath();
-      ctx.moveTo(16, 1);
-      ctx.lineTo(28, 6);
-      ctx.lineTo(16, 11);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.fillStyle = "#ff9bb3";
-      ctx.beginPath();
-      ctx.ellipse(-6, 2, 9, 6, -0.4, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.22)";
+      ctx.lineWidth = 2;
+      for (let i = 1; i < 5; i += 1) {
+        const x = basket.x + (basket.width / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, basket.y + 2);
+        ctx.lineTo(x, basket.y + basket.height - 2);
+        ctx.stroke();
+      }
 
       ctx.restore();
     }
 
-    function drawPipes() {
-      pipes.forEach((pipe) => {
-        ctx.fillStyle = "#8b1731";
-        ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
-        ctx.fillRect(pipe.x, pipe.topHeight + pipe.gap, pipe.width, canvas.height - pipe.topHeight - pipe.gap);
+    function drawLetter() {
+      if (!fallingLetter) return;
+      ctx.save();
+      ctx.font = `${fallingLetter.size}px "Segoe UI Emoji", "Trebuchet MS", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#7d1025";
+      ctx.fillText(fallingLetter.value, fallingLetter.x, fallingLetter.y);
 
-        ctx.fillStyle = "#b3173c";
-        ctx.fillRect(pipe.x - 4, pipe.topHeight - 16, pipe.width + 8, 16);
-        ctx.fillRect(pipe.x - 4, pipe.topHeight + pipe.gap, pipe.width + 8, 16);
-      });
+      if (fallingLetter.value !== "💓") {
+        ctx.strokeStyle = "rgba(255,255,255,0.7)";
+        ctx.lineWidth = 1.5;
+        ctx.strokeText(fallingLetter.value, fallingLetter.x, fallingLetter.y);
+      }
+      ctx.restore();
     }
 
     function drawScene() {
       drawBackground();
-      drawPipes();
-      drawBird();
-    }
-
-    function collisionDetected(pipe) {
-      const withinX = bird.x + bird.radius > pipe.x && bird.x - bird.radius < pipe.x + pipe.width;
-      const hitsTop = bird.y - bird.radius < pipe.topHeight;
-      const hitsBottom = bird.y + bird.radius > pipe.topHeight + pipe.gap;
-      return withinX && (hitsTop || hitsBottom);
+      drawBasket();
+      drawLetter();
     }
 
     function stopGame(message) {
@@ -1029,98 +1013,144 @@ Thank you for being there when I needed you the most....`;
       gameRunning = false;
       gameEnded = true;
       cancelAnimationFrame(animationId);
-      gameNote.textContent = "Princess won the gameeeee 💖";
       restartGameBtn.classList.remove("hidden");
+      gameNote.textContent = "You collected every letter perfectly 💖";
       launchBlast();
       winOverlay.classList.add("show");
+    }
+
+    function basketCatchesLetter() {
+      if (!fallingLetter) return false;
+
+      const catchZoneTop = basket.y - 12;
+      const insideX =
+        fallingLetter.x > basket.x + 8 &&
+        fallingLetter.x < basket.x + basket.width - 8;
+      const insideY =
+        fallingLetter.y + fallingLetter.size / 3 >= catchZoneTop &&
+        fallingLetter.y <= basket.y + basket.height + 8;
+
+      return insideX && insideY;
     }
 
     function updateGame() {
       if (!gameRunning || gameEnded) return;
 
-      bird.velocity += bird.gravity;
-      bird.y += bird.velocity;
-
-      pipeSpawnTimer += 1;
-      if (pipeSpawnTimer >= 95) {
-        createPipe();
-        pipeSpawnTimer = 0;
+      if (!fallingLetter) {
+        createFallingLetter();
       }
 
-      pipes.forEach((pipe) => {
-        pipe.x -= 2.4;
+      fallingLetter.y += fallingLetter.speed;
 
-        if (!pipe.scored && pipe.x + pipe.width < bird.x) {
-          pipe.scored = true;
-          score += 1;
-          scorePill.textContent = `Score: ${score} / ${WIN_SCORE}`;
-          if (score >= WIN_SCORE) {
-            drawScene();
-            winGame();
-          }
+      if (basketCatchesLetter()) {
+        currentIndex += 1;
+        scorePill.textContent = `Collected: ${currentIndex} / ${LETTER_SEQUENCE.length}`;
+
+        if (currentIndex >= LETTER_SEQUENCE.length) {
+          drawScene();
+          winGame();
+          return;
         }
 
-        if (collisionDetected(pipe) && !gameEnded) {
-          stopGame("Awww crash ho gaya... play again princess.");
-        }
-      });
+        gameNote.textContent = `Niceee... now catch "${LETTER_SEQUENCE[currentIndex]}"`;
+        createFallingLetter();
+      }
 
-      pipes = pipes.filter((pipe) => pipe.x + pipe.width > -20);
-
-      if (bird.y + bird.radius >= canvas.height - 55 || bird.y - bird.radius <= 0) {
-        stopGame("Oopsiee... bird gir gaya. Try again princess.");
+      if (fallingLetter && fallingLetter.y > canvas.height - 35) {
+        stopGame("You missed a letter... Play Again.");
       }
 
       drawScene();
-
-      if (gameRunning && !gameEnded) {
-        animationId = requestAnimationFrame(updateGame);
-      }
+      animationId = requestAnimationFrame(updateGame);
     }
 
-    function startFlappyGame() {
-      resetFlappyGame();
-      createPipe();
+    function startLetterGame() {
+      resetLetterGame();
       gameRunning = true;
-      bird.velocity = bird.jump;
-      gameNote.textContent = "Nowww flyyy and reach 5 points 💓";
+      createFallingLetter();
+      gameNote.textContent = `Catch "${LETTER_SEQUENCE[0]}" first`;
       animationId = requestAnimationFrame(updateGame);
+    }
+
+    function moveBasketTo(clientX) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const x = (clientX - rect.left) * scaleX;
+      basket.x = Math.max(0, Math.min(canvas.width - basket.width, x - basket.width / 2));
+      if (!gameRunning) drawScene();
+    }
+
+    function typeFinalMessage(text) {
+      finalTypeText.classList.remove("hidden");
+      finalTypeText.textContent = "";
+      let i = 0;
+
+      const timer = setInterval(() => {
+        finalTypeText.textContent = text.slice(0, i);
+        i += 1;
+        if (i > text.length) {
+          clearInterval(timer);
+        }
+      }, 55);
     }
 
     battleYesBtn.addEventListener("click", () => {
       battleIntro.classList.add("hidden");
       battleStage.classList.remove("hidden");
-      resetFlappyGame();
+      resetLetterGame();
     });
 
-    startGameBtn.addEventListener("click", startFlappyGame);
-    restartGameBtn.addEventListener("click", startFlappyGame);
+    startGameBtn.addEventListener("click", startLetterGame);
+    restartGameBtn.addEventListener("click", startLetterGame);
 
-    canvas.addEventListener("click", jumpBird);
     window.addEventListener("keydown", (event) => {
-      if (event.code === "Space") {
-        event.preventDefault();
-        jumpBird();
+      if (!basket) return;
+      if (event.code === "ArrowLeft") {
+        basket.x = Math.max(0, basket.x - basket.speed);
+        if (!gameRunning) drawScene();
+      }
+      if (event.code === "ArrowRight") {
+        basket.x = Math.min(canvas.width - basket.width, basket.x + basket.speed);
+        if (!gameRunning) drawScene();
       }
     });
 
-    submitRatingBtn.addEventListener("click", () => {
-      const rating = Number(ratingInput.value);
-
-      if (!ratingInput.value.trim()) {
-        ratingResult.textContent = "enter something first princess 😌";
-        return;
-      }
-
-      if (rating < 8) {
-        ratingResult.textContent = "wrong answer.... i am 10/10";
-      } else {
-        ratingResult.textContent = "yeah but you are 100/10😉";
-      }
+    canvas.addEventListener("mousemove", (event) => {
+      if (!basket) return;
+      moveBasketTo(event.clientX);
     });
 
-    resetFlappyGame();
+    canvas.addEventListener("touchmove", (event) => {
+      if (!basket) return;
+      event.preventDefault();
+      moveBasketTo(event.touches[0].clientX);
+    }, { passive: false });
+
+    canvas.addEventListener("click", (event) => {
+      if (!basket) return;
+      moveBasketTo(event.clientX);
+    });
+
+    sorryYesBtn.addEventListener("click", () => {
+      initialOptions.classList.add("hidden");
+      notPermittedText.classList.add("hidden");
+      chooseOneBtn.classList.add("hidden");
+      typeFinalMessage("I LOVE YOU SO MUCH CUTIE PIE 🌸🌹");
+    });
+
+    sorryNoBtn.addEventListener("click", () => {
+      notPermittedText.classList.remove("hidden");
+      notPermittedText.textContent = "not permitted.... Aage dekhne ke liye you are not allowed";
+      chooseOneBtn.classList.remove("hidden");
+      finalTypeText.classList.add("hidden");
+      finalTypeText.textContent = "";
+    });
+
+    chooseOneBtn.addEventListener("click", () => {
+      sorryYesBtn.click();
+    });
+
+    resetLetterGame();
   </script>
 </body>
 </html>
-
