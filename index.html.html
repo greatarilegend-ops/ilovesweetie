@@ -133,17 +133,19 @@
     }
 
     .button-row,
-    .choice-grid,
-    .action-row {
+    .choice-grid {
       display: grid;
       gap: 14px;
       width: 100%;
     }
 
-    .button-row,
-    .choice-grid,
-    .action-row {
+    .button-row {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .choice-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 10px;
     }
 
     button,
@@ -181,7 +183,8 @@
 
     .feedback,
     .error,
-    .success {
+    .success,
+    .tiny-note {
       min-height: 26px;
       font-weight: 700;
       line-height: 1.5;
@@ -329,7 +332,8 @@
       width: 100%;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    input[type="number"] {
       width: min(180px, 100%);
       border: 2px solid rgba(255, 255, 255, 0.32);
       border-radius: 16px;
@@ -341,7 +345,8 @@
       outline: none;
     }
 
-    input[type="text"]::placeholder {
+    input[type="text"]::placeholder,
+    input[type="number"]::placeholder {
       color: rgba(255, 255, 255, 0.72);
     }
 
@@ -385,65 +390,128 @@
 
     .battle-area {
       display: grid;
-      gap: 18px;
+      gap: 20px;
       justify-items: center;
+      width: 100%;
     }
 
-    .game-note {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #ffe3ea;
-      text-align: center;
-    }
-
-    .flappy-wrap {
-      width: min(420px, 92vw);
+    .game-shell {
+      width: min(420px, 100%);
       display: grid;
       gap: 14px;
       justify-items: center;
+      position: relative;
     }
 
-    .score-line {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      color: #fff3f7;
-      font-weight: 800;
-      font-size: 1rem;
-    }
-
-    canvas {
-      width: 100%;
+    #flappy-canvas {
+      width: min(420px, 100%);
       height: auto;
-      border-radius: 24px;
-      background: linear-gradient(180deg, #ffb9ca 0%, #ffdbe8 55%, #ffeef4 100%);
-      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+      border-radius: 22px;
+      background: linear-gradient(180deg, #ffbfd0 0%, #ffcddd 40%, #ffdce7 100%);
+      box-shadow: inset 0 -8px 0 rgba(125, 16, 37, 0.12);
       display: block;
     }
 
-    .game-status {
-      min-height: 34px;
-      text-align: center;
-      color: #ffe3ea;
-      font-weight: 700;
-      line-height: 1.5;
+    .score-pill {
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff7fa;
+      font-weight: 800;
+      letter-spacing: 0.04em;
     }
 
-    .shake {
-      animation: shake 0.55s ease;
+    .game-note {
+      color: #ffe3ea;
+      font-weight: 700;
+      text-align: center;
+      min-height: 26px;
+    }
+
+    .win-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      background: radial-gradient(circle at center, rgba(255, 236, 161, 0.94), rgba(255, 163, 191, 0.96));
+      display: none;
+      place-items: center;
+      padding: 20px;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .win-overlay.show {
+      display: grid;
+      animation: overlayPop 0.5s ease forwards;
+    }
+
+    .blast-wrap {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .blast-dot {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      opacity: 0;
+      animation: burst 1s ease-out forwards;
+    }
+
+    .win-card {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+      color: #7d1025;
+      max-width: 320px;
+    }
+
+    .win-title {
+      font-size: clamp(1.7rem, 5vw, 2.4rem);
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .win-subtitle {
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .rating-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .rating-row input {
+      color: #7d1025;
+      background: rgba(255, 255, 255, 0.75);
+      border-color: rgba(125, 16, 37, 0.18);
+    }
+
+    .rating-result {
+      min-height: 26px;
+      font-weight: 900;
+      color: #8b1731;
+    }
+
+    .sorry-text {
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.6;
+      color: #691023;
     }
 
     .spacer-top {
       margin-top: 8px;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-10px); }
-      40% { transform: translateX(10px); }
-      60% { transform: translateX(-8px); }
-      80% { transform: translateX(8px); }
     }
 
     @keyframes pulse {
@@ -472,10 +540,31 @@
       }
     }
 
+    @keyframes overlayPop {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes burst {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(0.2);
+      }
+    }
+
     @media (max-width: 640px) {
       .button-row,
-      .choice-grid,
-      .action-row {
+      .choice-grid {
         grid-template-columns: 1fr;
       }
 
@@ -490,8 +579,9 @@
         min-height: 320px;
       }
 
-      .score-line {
-        font-size: 0.95rem;
+      .rating-row {
+        flex-direction: column;
+        align-items: center;
       }
     }
   </style>
@@ -584,24 +674,31 @@
         </div>
 
         <div class="battle-area hidden" id="battle-stage">
-          <h3 class="title" style="font-size: clamp(1.6rem, 4vw, 2.2rem);">Flappy Love Bird</h3>
-          <p class="game-note">Score 10 points to win</p>
-          <div class="flappy-wrap">
-            <div class="score-line">
-              <span id="score-text">Score: 0</span>
-              <span>Tap / Click / Space to fly</span>
+          <h3 class="title" style="font-size: clamp(1.6rem, 4vw, 2.2rem);">Flappy Bird</h3>
+          <p class="subtitle">Score 5 points to win, princess 💓 Tap, click, or press space to fly.</p>
+
+          <div class="game-shell">
+            <div class="score-pill" id="score-pill">Score: 0 / 5</div>
+            <canvas id="flappy-canvas" width="400" height="560"></canvas>
+            <div class="game-note" id="game-note">Tap Start and then keep the bird flying.</div>
+
+            <div class="win-overlay" id="win-overlay">
+              <div class="blast-wrap" id="blast-wrap"></div>
+              <div class="win-card">
+                <div class="win-title">hurrayyy!!!! you wonn my princess😙</div>
+                <div class="win-subtitle">rate me out of 10</div>
+                <div class="rating-row">
+                  <input type="number" id="rating-input" min="0" max="10" placeholder="0 to 10">
+                  <button class="btn-accent" id="submit-rating-btn">Submit</button>
+                </div>
+                <div class="rating-result" id="rating-result"></div>
+                <div class="sorry-text">okayy so now.... say sorry to me.... i am waiting 😾</div>
+              </div>
             </div>
-            <canvas id="flappy-canvas" width="420" height="620" aria-label="Flappy bird game"></canvas>
           </div>
-          <div class="game-status" id="game-status">Press Start and score 10 points to win.</div>
-          <div class="action-row">
-            <button class="btn-solid" id="start-game-btn">Start Game</button>
-            <button class="btn-solid hidden" id="play-again-btn">Play Again</button>
-          </div>
-          <div class="action-row hidden" id="win-actions">
-            <button class="btn-accent" id="text-me-btn">Text Me Again 💌</button>
-            <button class="btn-light" id="win-play-again-btn">Play Again</button>
-          </div>
+
+          <button class="btn-solid" id="start-game-btn">Start Game</button>
+          <button class="btn-light hidden" id="restart-game-btn">Play Again</button>
         </div>
       </div>
     </section>
@@ -753,275 +850,241 @@ Thank you for being there when I needed you the most....`;
     const battleStage = document.getElementById("battle-stage");
     const canvas = document.getElementById("flappy-canvas");
     const ctx = canvas.getContext("2d");
-    const gameStatus = document.getElementById("game-status");
-    const scoreText = document.getElementById("score-text");
+    const scorePill = document.getElementById("score-pill");
+    const gameNote = document.getElementById("game-note");
     const startGameBtn = document.getElementById("start-game-btn");
-    const playAgainBtn = document.getElementById("play-again-btn");
-    const winActions = document.getElementById("win-actions");
-    const textMeBtn = document.getElementById("text-me-btn");
-    const winPlayAgainBtn = document.getElementById("win-play-again-btn");
+    const restartGameBtn = document.getElementById("restart-game-btn");
+    const winOverlay = document.getElementById("win-overlay");
+    const blastWrap = document.getElementById("blast-wrap");
+    const ratingInput = document.getElementById("rating-input");
+    const submitRatingBtn = document.getElementById("submit-rating-btn");
+    const ratingResult = document.getElementById("rating-result");
 
-    const game = {
-      width: canvas.width,
-      height: canvas.height,
-      gravity: 0.42,
-      flap: -7.2,
-      pipeWidth: 64,
-      pipeGap: 170,
-      pipeSpeed: 2.7,
-      pipeSpawnEvery: 92,
-      frame: 0,
-      score: 0,
-      wins: 0,
-      running: false,
-      ended: false,
-      bird: {
-        x: 110,
-        y: 260,
-        velocity: 0,
-        radius: 18
-      },
-      pipes: []
-    };
+    const WIN_SCORE = 5;
 
-    function updateScore() {
-      scoreText.textContent = `Score: ${game.score}`;
-    }
+    let bird;
+    let pipes;
+    let score;
+    let animationId;
+    let gameRunning = false;
+    let gameEnded = false;
+    let pipeSpawnTimer = 0;
 
     function resetFlappyGame() {
-      game.frame = 0;
-      game.score = 0;
-      game.running = false;
-      game.ended = false;
-      game.pipes = [];
-      game.bird.y = 260;
-      game.bird.velocity = 0;
-      updateScore();
-      gameStatus.textContent = "Press Start and score 10 points to win.";
-      startGameBtn.classList.remove("hidden");
-      playAgainBtn.classList.add("hidden");
-      winActions.classList.add("hidden");
-      drawGame();
-    }
+      bird = {
+        x: 90,
+        y: 220,
+        radius: 18,
+        velocity: 0,
+        gravity: 0.42,
+        jump: -7.2
+      };
 
-    function startFlappyGame() {
-      game.frame = 0;
-      game.score = 0;
-      game.running = true;
-      game.ended = false;
-      game.pipes = [];
-      game.bird.y = 260;
-      game.bird.velocity = 0;
-      updateScore();
-      gameStatus.textContent = "Go go go... score 10 points 💓";
-      startGameBtn.classList.add("hidden");
-      playAgainBtn.classList.add("hidden");
-      winActions.classList.add("hidden");
-    }
-
-    function flapBird() {
-      if (!game.running) return;
-      game.bird.velocity = game.flap;
+      pipes = [];
+      score = 0;
+      pipeSpawnTimer = 0;
+      gameRunning = false;
+      gameEnded = false;
+      ratingInput.value = "";
+      ratingResult.textContent = "";
+      winOverlay.classList.remove("show");
+      restartGameBtn.classList.add("hidden");
+      scorePill.textContent = `Score: ${score} / ${WIN_SCORE}`;
+      gameNote.textContent = "Tap Start and then keep the bird flying.";
+      drawScene();
     }
 
     function createPipe() {
+      const gap = 150;
       const minTop = 80;
-      const maxTop = game.height - game.pipeGap - 120;
+      const maxTop = 300;
       const topHeight = Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop;
 
-      game.pipes.push({
-        x: game.width + 20,
+      pipes.push({
+        x: canvas.width + 40,
+        width: 64,
         topHeight,
-        bottomY: topHeight + game.pipeGap,
-        passed: false
+        gap,
+        scored: false
       });
     }
 
-    function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
-      const closestX = Math.max(rx, Math.min(cx, rx + rw));
-      const closestY = Math.max(ry, Math.min(cy, ry + rh));
-      const dx = cx - closestX;
-      const dy = cy - closestY;
-      return dx * dx + dy * dy < radius * radius;
-    }
-
-    function endRound(won) {
-      game.running = false;
-      game.ended = true;
-
-      if (won) {
-        game.wins += 1;
-        if (game.wins >= 2) {
-          gameStatus.textContent = "kitna kheloge...text me now";
-        } else {
-          gameStatus.textContent = "You wonnnn 💖";
-        }
-        winActions.classList.remove("hidden");
-        playAgainBtn.classList.add("hidden");
-      } else {
-        gameStatus.textContent = "Areee you crashed... try again 💔";
-        playAgainBtn.classList.remove("hidden");
-        winActions.classList.add("hidden");
-      }
-    }
-
-    function updateGame() {
-      if (!game.running) return;
-
-      game.frame += 1;
-      game.bird.velocity += game.gravity;
-      game.bird.y += game.bird.velocity;
-
-      if (game.frame % game.pipeSpawnEvery === 0) {
-        createPipe();
-      }
-
-      for (const pipe of game.pipes) {
-        pipe.x -= game.pipeSpeed;
-
-        if (!pipe.passed && pipe.x + game.pipeWidth < game.bird.x) {
-          pipe.passed = true;
-          game.score += 1;
-          updateScore();
-
-          if (game.score >= 10) {
-            endRound(true);
-            return;
-          }
-        }
-
-        const hitTop = circleRectCollision(
-          game.bird.x,
-          game.bird.y,
-          game.bird.radius,
-          pipe.x,
-          0,
-          game.pipeWidth,
-          pipe.topHeight
-        );
-
-        const hitBottom = circleRectCollision(
-          game.bird.x,
-          game.bird.y,
-          game.bird.radius,
-          pipe.x,
-          pipe.bottomY,
-          game.pipeWidth,
-          game.height - pipe.bottomY
-        );
-
-        if (hitTop || hitBottom) {
-          endRound(false);
-          return;
-        }
-      }
-
-      game.pipes = game.pipes.filter((pipe) => pipe.x + game.pipeWidth > -10);
-
-      if (game.bird.y - game.bird.radius <= 0 || game.bird.y + game.bird.radius >= game.height) {
-        endRound(false);
-      }
+    function jumpBird() {
+      if (!gameRunning || gameEnded) return;
+      bird.velocity = bird.jump;
     }
 
     function drawBackground() {
-      ctx.clearRect(0, 0, game.width, game.height);
-
-      const sky = ctx.createLinearGradient(0, 0, 0, game.height);
-      sky.addColorStop(0, "#ffb7ca");
-      sky.addColorStop(0.55, "#ffd7e5");
-      sky.addColorStop(1, "#fff0f5");
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, game.width, game.height);
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#ffb8cd");
+      gradient.addColorStop(0.5, "#ffd8e5");
+      gradient.addColorStop(1, "#fff0f5");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "rgba(255,255,255,0.45)";
       ctx.beginPath();
-      ctx.arc(72, 90, 26, 0, Math.PI * 2);
-      ctx.arc(98, 82, 24, 0, Math.PI * 2);
-      ctx.arc(122, 94, 22, 0, Math.PI * 2);
+      ctx.arc(70, 90, 28, 0, Math.PI * 2);
+      ctx.arc(95, 78, 22, 0, Math.PI * 2);
+      ctx.arc(120, 90, 26, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.beginPath();
-      ctx.arc(300, 110, 24, 0, Math.PI * 2);
-      ctx.arc(325, 100, 22, 0, Math.PI * 2);
-      ctx.arc(346, 112, 20, 0, Math.PI * 2);
+      ctx.arc(290, 120, 24, 0, Math.PI * 2);
+      ctx.arc(315, 108, 20, 0, Math.PI * 2);
+      ctx.arc(340, 120, 24, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#f6b4c6";
-      ctx.fillRect(0, game.height - 52, game.width, 52);
-    }
-
-    function drawPipes() {
-      for (const pipe of game.pipes) {
-        ctx.fillStyle = "#d72657";
-        ctx.fillRect(pipe.x, 0, game.pipeWidth, pipe.topHeight);
-        ctx.fillRect(pipe.x, pipe.bottomY, game.pipeWidth, game.height - pipe.bottomY);
-
-        ctx.fillStyle = "#ff87a7";
-        ctx.fillRect(pipe.x - 4, pipe.topHeight - 12, game.pipeWidth + 8, 12);
-        ctx.fillRect(pipe.x - 4, pipe.bottomY, game.pipeWidth + 8, 12);
-      }
+      ctx.fillStyle = "#d96a8a";
+      ctx.fillRect(0, canvas.height - 55, canvas.width, 55);
+      ctx.fillStyle = "#f58dad";
+      ctx.fillRect(0, canvas.height - 65, canvas.width, 14);
     }
 
     function drawBird() {
       ctx.save();
-      ctx.translate(game.bird.x, game.bird.y);
-      ctx.rotate(Math.max(-0.4, Math.min(0.7, game.bird.velocity * 0.05)));
+      ctx.translate(bird.x, bird.y);
 
-      ctx.fillStyle = "#ff4f7d";
+      ctx.fillStyle = "#ff5f89";
       ctx.beginPath();
-      ctx.arc(0, 0, game.bird.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#ffd5df";
-      ctx.beginPath();
-      ctx.ellipse(-4, 3, 8, 6, -0.6, 0, Math.PI * 2);
+      ctx.arc(0, 0, bird.radius, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(6, -5, 5, 0, Math.PI * 2);
+      ctx.arc(6, -5, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#3b1020";
+      ctx.fillStyle = "#4b1020";
       ctx.beginPath();
-      ctx.arc(7, -5, 2, 0, Math.PI * 2);
+      ctx.arc(8, -5, 2.5, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#ffb347";
+      ctx.fillStyle = "#ffcf5c";
       ctx.beginPath();
-      ctx.moveTo(15, 1);
-      ctx.lineTo(28, 5);
-      ctx.lineTo(15, 9);
+      ctx.moveTo(16, 1);
+      ctx.lineTo(28, 6);
+      ctx.lineTo(16, 11);
       ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#ff9bb3";
+      ctx.beginPath();
+      ctx.ellipse(-6, 2, 9, 6, -0.4, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
     }
 
-    function drawOverlayText() {
-      if (!game.running && !game.ended) {
-        ctx.fillStyle = "rgba(125, 16, 37, 0.18)";
-        ctx.fillRect(32, 240, game.width - 64, 86);
-        ctx.fillStyle = "#7d1025";
-        ctx.font = "700 20px Trebuchet MS";
-        ctx.textAlign = "center";
-        ctx.fillText("Press Start, then tap to fly", game.width / 2, 275);
-        ctx.font = "700 18px Trebuchet MS";
-        ctx.fillText("Reach 10 points to win", game.width / 2, 305);
-      }
+    function drawPipes() {
+      pipes.forEach((pipe) => {
+        ctx.fillStyle = "#8b1731";
+        ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+        ctx.fillRect(pipe.x, pipe.topHeight + pipe.gap, pipe.width, canvas.height - pipe.topHeight - pipe.gap);
+
+        ctx.fillStyle = "#b3173c";
+        ctx.fillRect(pipe.x - 4, pipe.topHeight - 16, pipe.width + 8, 16);
+        ctx.fillRect(pipe.x - 4, pipe.topHeight + pipe.gap, pipe.width + 8, 16);
+      });
     }
 
-    function drawGame() {
+    function drawScene() {
       drawBackground();
       drawPipes();
       drawBird();
-      drawOverlayText();
     }
 
-    function gameLoop() {
-      updateGame();
-      drawGame();
-      requestAnimationFrame(gameLoop);
+    function collisionDetected(pipe) {
+      const withinX = bird.x + bird.radius > pipe.x && bird.x - bird.radius < pipe.x + pipe.width;
+      const hitsTop = bird.y - bird.radius < pipe.topHeight;
+      const hitsBottom = bird.y + bird.radius > pipe.topHeight + pipe.gap;
+      return withinX && (hitsTop || hitsBottom);
+    }
+
+    function stopGame(message) {
+      gameRunning = false;
+      gameEnded = true;
+      cancelAnimationFrame(animationId);
+      gameNote.textContent = message;
+      restartGameBtn.classList.remove("hidden");
+    }
+
+    function launchBlast() {
+      blastWrap.innerHTML = "";
+      const colors = ["#fff", "#ffe16b", "#ff7aa2", "#ffd3e1", "#ff9ec0"];
+      for (let i = 0; i < 28; i += 1) {
+        const dot = document.createElement("span");
+        dot.className = "blast-dot";
+        dot.style.left = "50%";
+        dot.style.top = "50%";
+        dot.style.background = colors[i % colors.length];
+        dot.style.setProperty("--dx", `${Math.cos((Math.PI * 2 * i) / 28) * (120 + (i % 4) * 18)}px`);
+        dot.style.setProperty("--dy", `${Math.sin((Math.PI * 2 * i) / 28) * (120 + (i % 5) * 16)}px`);
+        dot.style.animationDelay = `${i * 0.015}s`;
+        blastWrap.appendChild(dot);
+      }
+    }
+
+    function winGame() {
+      gameRunning = false;
+      gameEnded = true;
+      cancelAnimationFrame(animationId);
+      gameNote.textContent = "Princess won the gameeeee 💖";
+      restartGameBtn.classList.remove("hidden");
+      launchBlast();
+      winOverlay.classList.add("show");
+    }
+
+    function updateGame() {
+      if (!gameRunning || gameEnded) return;
+
+      bird.velocity += bird.gravity;
+      bird.y += bird.velocity;
+
+      pipeSpawnTimer += 1;
+      if (pipeSpawnTimer >= 95) {
+        createPipe();
+        pipeSpawnTimer = 0;
+      }
+
+      pipes.forEach((pipe) => {
+        pipe.x -= 2.4;
+
+        if (!pipe.scored && pipe.x + pipe.width < bird.x) {
+          pipe.scored = true;
+          score += 1;
+          scorePill.textContent = `Score: ${score} / ${WIN_SCORE}`;
+          if (score >= WIN_SCORE) {
+            drawScene();
+            winGame();
+          }
+        }
+
+        if (collisionDetected(pipe) && !gameEnded) {
+          stopGame("Awww crash ho gaya... play again princess.");
+        }
+      });
+
+      pipes = pipes.filter((pipe) => pipe.x + pipe.width > -20);
+
+      if (bird.y + bird.radius >= canvas.height - 55 || bird.y - bird.radius <= 0) {
+        stopGame("Oopsiee... bird gir gaya. Try again princess.");
+      }
+
+      drawScene();
+
+      if (gameRunning && !gameEnded) {
+        animationId = requestAnimationFrame(updateGame);
+      }
+    }
+
+    function startFlappyGame() {
+      resetFlappyGame();
+      createPipe();
+      gameRunning = true;
+      bird.velocity = bird.jump;
+      gameNote.textContent = "Nowww flyyy and reach 5 points 💓";
+      animationId = requestAnimationFrame(updateGame);
     }
 
     battleYesBtn.addEventListener("click", () => {
@@ -1031,24 +1094,33 @@ Thank you for being there when I needed you the most....`;
     });
 
     startGameBtn.addEventListener("click", startFlappyGame);
-    playAgainBtn.addEventListener("click", startFlappyGame);
-    winPlayAgainBtn.addEventListener("click", startFlappyGame);
+    restartGameBtn.addEventListener("click", startFlappyGame);
 
-    textMeBtn.addEventListener("click", () => {
-      gameStatus.textContent = game.wins >= 2 ? "kitna kheloge...text me now" : "Ab text bhi kar do na 💌";
-    });
-
-    canvas.addEventListener("click", flapBird);
-
+    canvas.addEventListener("click", jumpBird);
     window.addEventListener("keydown", (event) => {
       if (event.code === "Space") {
         event.preventDefault();
-        flapBird();
+        jumpBird();
       }
     });
 
-    drawGame();
-    gameLoop();
+    submitRatingBtn.addEventListener("click", () => {
+      const rating = Number(ratingInput.value);
+
+      if (!ratingInput.value.trim()) {
+        ratingResult.textContent = "enter something first princess 😌";
+        return;
+      }
+
+      if (rating < 8) {
+        ratingResult.textContent = "wrong answer.... i am 10/10";
+      } else {
+        ratingResult.textContent = "yeah but you are 100/10😉";
+      }
+    });
+
+    resetFlappyGame();
   </script>
 </body>
 </html>
+
